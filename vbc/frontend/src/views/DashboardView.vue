@@ -22,11 +22,19 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- WebSocket connection indicator -->
+    <div class="ws-indicator">
+      <span class="dot" :class="{ online: wsConnected }" />
+      {{ wsConnected ? '实时连接' : '实时连接断开' }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref, onMounted, onUnmounted } from 'vue'
+import { useWebSocket } from '@/composables/useWebSocket'
+import { useAlarmStore } from '@/store/alarm'
 
 const stats = reactive([
   { label: '在线设备', value: '0' },
@@ -34,6 +42,36 @@ const stats = reactive([
   { label: '今日人数', value: '0' },
   { label: '今日车辆', value: '0' },
 ])
+
+const wsConnected = ref(false)
+const alarmStore = useAlarmStore()
+const { connected, connect, subscribe, disconnect } = useWebSocket()
+
+onMounted(async () => {
+  await connect()
+  wsConnected.value = connected.value
+
+  // Subscribe to dashboard stats updates
+  subscribe('/topic/dashboard', (msg: any) => {
+    if (msg.type === 'STATS_UPDATE') {
+      if (msg.onlineDevices !== undefined) stats[0].value = String(msg.onlineDevices)
+      if (msg.todayAlarms !== undefined) stats[1].value = String(msg.todayAlarms)
+      if (msg.todayPersonCount !== undefined) stats[2].value = String(msg.todayPersonCount)
+      if (msg.todayVehicleCount !== undefined) stats[3].value = String(msg.todayVehicleCount)
+    }
+  })
+
+  // Subscribe to all alarm notifications for badge update
+  subscribe('/topic/alarm/0', (msg: any) => {
+    if (msg.type === 'ALARM_TRIGGERED') {
+      alarmStore.incrementUnread()
+    }
+  })
+})
+
+onUnmounted(() => {
+  disconnect()
+})
 </script>
 
 <style scoped lang="scss">
@@ -48,5 +86,21 @@ const stats = reactive([
   background: #f5f7fa;
   color: #909399;
   border-radius: 4px;
+}
+.ws-indicator {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 12px;
+  color: #909399;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f56c6c;
+  &.online { background: #67c23a; }
 }
 </style>
