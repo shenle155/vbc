@@ -1,0 +1,39 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+
+# Maven
+target/
+*.jar
+!*.jar.original
+
+# Java
+*.class
+*.ctxt
+.mtj.tmp/
+
+# Uploads (runtime)
+vbc/backend/uploads/videos/*
+vbc/backend/uploads/frames/*
+vbc/backend/uploads/thumbnails/*
+vbc/backend/uploads/snapshots/*
+!vbc/backend/uploads/**/.gitkeep
+
+# Package files
+package-lock.json
+yarn.lock
