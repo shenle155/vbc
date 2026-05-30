@@ -3,9 +3,13 @@ package com.vbc.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.vbc.dto.VideoUploadDTO;
+import com.vbc.entity.Frame;
 import com.vbc.entity.Video;
+import com.vbc.repository.FrameMapper;
 import com.vbc.repository.VideoMapper;
 import com.vbc.service.VideoService;
+import com.vbc.util.FileUtil;
+import com.vbc.vo.FrameVO;
 import com.vbc.vo.PageResult;
 import com.vbc.vo.VideoVO;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +36,7 @@ import java.util.stream.Collectors;
 public class VideoServiceImpl implements VideoService {
 
     private final VideoMapper videoMapper;
+    private final FrameMapper frameMapper;
 
     @Value("${vbc.upload.video-path}")
     private String videoUploadPath;
@@ -129,5 +134,20 @@ public class VideoServiceImpl implements VideoService {
             log.warn("Failed to delete physical files for video {}", id, e);
         }
         videoMapper.deleteById(id);
+    }
+
+    @Override
+    public List<FrameVO> listFrames(Long videoId, Integer startIndex, Integer endIndex) {
+        LambdaQueryWrapper<Frame> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Frame::getVideoId, videoId)
+                .ge(Frame::getFrameIndex, startIndex)
+                .le(Frame::getFrameIndex, endIndex)
+                .orderByAsc(Frame::getFrameIndex);
+        List<Frame> frames = frameMapper.selectList(wrapper);
+        return frames.stream().map(f -> {
+            String filename = FileUtil.getFileName(f.getFilePath());
+            return new FrameVO(f.getId(), f.getVideoId(), f.getFrameIndex(),
+                    f.getTimestampSeconds(), "/api/v1/files/frames/" + filename, f.getProcessed());
+        }).toList();
     }
 }

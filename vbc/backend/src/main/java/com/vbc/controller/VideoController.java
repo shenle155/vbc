@@ -1,7 +1,10 @@
 package com.vbc.controller;
 
+import com.vbc.dto.FrameExtractDTO;
 import com.vbc.dto.VideoUploadDTO;
+import com.vbc.service.FrameExtractionService;
 import com.vbc.service.VideoService;
+import com.vbc.vo.FrameVO;
 import com.vbc.vo.PageResult;
 import com.vbc.vo.VideoVO;
 import jakarta.validation.Valid;
@@ -11,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,6 +23,7 @@ import java.util.Map;
 public class VideoController {
 
     private final VideoService videoService;
+    private final FrameExtractionService frameExtractionService;
 
     @GetMapping
     public Map<String, Object> list(
@@ -50,6 +55,23 @@ public class VideoController {
     @DeleteMapping("/{id}")
     public Map<String, Object> delete(@PathVariable Long id) {
         videoService.deleteVideo(id);
+        return success(null);
+    }
+
+    @GetMapping("/{videoId}/frames")
+    public Map<String, Object> listFrames(
+            @PathVariable Long videoId,
+            @RequestParam(defaultValue = "0") Integer startIndex,
+            @RequestParam(defaultValue = "100") Integer endIndex) {
+        List<FrameVO> frames = videoService.listFrames(videoId, startIndex, endIndex);
+        return success(frames);
+    }
+
+    @PostMapping("/{videoId}/extract")
+    public Map<String, Object> extractFrames(
+            @PathVariable Long videoId,
+            @RequestBody FrameExtractDTO dto) {
+        frameExtractionService.extractFrames(videoId, dto);
         return success(null);
     }
 
