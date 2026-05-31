@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vbc.dto.DetectionReportDTO;
+import com.vbc.entity.CrowdHeatmapData;
 import com.vbc.entity.DetectionRecord;
+import com.vbc.repository.CrowdHeatmapDataMapper;
 import com.vbc.repository.DetectionRecordMapper;
 import com.vbc.service.AlarmEvaluationService;
 import com.vbc.service.DetectionService;
@@ -26,6 +28,7 @@ public class DetectionServiceImpl implements DetectionService {
 
     private final DetectionRecordMapper detectionRecordMapper;
     private final AlarmEvaluationService alarmEvaluationService;
+    private final CrowdHeatmapDataMapper heatmapDataMapper;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -74,7 +77,44 @@ public class DetectionServiceImpl implements DetectionService {
         } catch (Exception e) {
             log.error("Alarm evaluation failed for detection {}", record.getId(), e);
         }
+
+        // Update heatmap data
+        updateHeatmap(report);
     }
+
+    private void updateHeatmap(DetectionReportDTO report) {
+        int gridCols = 10, gridRows = 10;
+        double[][] grid = new double[gridCols][gridRows];
+
+        if (report.getDetections() != null) {
+            for (var det : report.getDetections()) {
+                if (!"person".equals(det.getClassName())) continue;
+                if (det.getBbox() == null) continue;
+                double cx = det.getBbox().getX() + det.getBbox().getW() / 2;
+                double cy = det.getBbox().getY() + det.getBbox().getH() / 2;
+                // Normalize to grid
+                int gx = (int) Math.min(Math.max(cx / 640, 0), gridCols - 1);
+                int gy = (int) Math.min(Math.max(cy / 480, 0), gridRows - 1);
+                grid[gx][gy] += 1.0;
+            }
+        }
+
+        // Normalize and save
+        double maxVal = 1.0;
+        for (double[] row : grid) {
+            for (double v : row) maxVal = Math.max(maxVal, v);
+        }
+        for (int x = 0; x < gridCols; x++) {
+            for (int y = 0; y < gridRows; y++) {
+                CrowdHeatmapData hd = new CrowdHeatmapData();
+                hd.setVideoId(report.getVideoId());
+                hd.setTimestampSeconds(report.getTimestampSeconds());
+                hd.setGridX(x);
+                hd.setGridY(y);
+                hd.setDensityValue(grid[x][y] / maxVal);
+                heatmapDataMapper.insert(hd);
+            }
+        }
 
     @Override
     public PageResult<DetectionVO> listDetections(Long videoId, Integer page, Integer pageSize,

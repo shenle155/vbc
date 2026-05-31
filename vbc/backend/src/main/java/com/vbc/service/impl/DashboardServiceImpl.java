@@ -19,6 +19,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final VideoMapper videoMapper;
     private final DetectionRecordMapper detectionRecordMapper;
     private final AlarmRecordMapper alarmRecordMapper;
+    private final CrowdHeatmapDataMapper heatmapDataMapper;
 
     @Override
     public DashboardOverviewVO getOverview() {
@@ -129,6 +130,17 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public List<HeatmapDataVO> getHeatmapData(Long videoId, Double startTime, Double endTime) {
-        return List.of(); // placeholder for Phase 8
+        var w = new LambdaQueryWrapper<CrowdHeatmapData>()
+                .eq(CrowdHeatmapData::getVideoId, videoId)
+                .ge(CrowdHeatmapData::getTimestampSeconds, startTime)
+                .le(CrowdHeatmapData::getTimestampSeconds, endTime);
+        return heatmapDataMapper.selectList(w).stream().map(h -> {
+            HeatmapDataVO vo = new HeatmapDataVO();
+            vo.setTimestampSeconds(h.getTimestampSeconds());
+            vo.setGridX(h.getGridX());
+            vo.setGridY(h.getGridY());
+            vo.setDensityValue(h.getDensityValue());
+            return vo;
+        }).collect(Collectors.toList());
     }
 }
