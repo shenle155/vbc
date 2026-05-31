@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vbc.dto.DetectionReportDTO;
 import com.vbc.entity.DetectionRecord;
 import com.vbc.repository.DetectionRecordMapper;
+import com.vbc.service.AlarmEvaluationService;
 import com.vbc.service.DetectionService;
 import com.vbc.vo.DetectionVO;
 import com.vbc.vo.PageResult;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class DetectionServiceImpl implements DetectionService {
 
     private final DetectionRecordMapper detectionRecordMapper;
+    private final AlarmEvaluationService alarmEvaluationService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -65,6 +67,13 @@ public class DetectionServiceImpl implements DetectionService {
                 : record.getPersonCount() + record.getVehicleCount());
 
         detectionRecordMapper.insert(record);
+
+        // Trigger alarm evaluation
+        try {
+            alarmEvaluationService.evaluate(record);
+        } catch (Exception e) {
+            log.error("Alarm evaluation failed for detection {}", record.getId(), e);
+        }
     }
 
     @Override
