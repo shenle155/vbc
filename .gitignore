@@ -34,6 +34,9 @@ vbc/backend/uploads/thumbnails/*
 vbc/backend/uploads/snapshots/*
 !vbc/backend/uploads/**/.gitkeep
 
+# Claude
+.claude/
+
 # Package files
 package-lock.json
 yarn.lock
