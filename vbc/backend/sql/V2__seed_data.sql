@@ -14,3 +14,9 @@ INSERT INTO vbc_device (device_name, device_code, ip_address, stream_url, locati
 ('行政楼摄像头 J1', 'CAM-ADMIN-001', '192.168.1.110', 'rtsp://192.168.1.110:554/stream', '行政楼大厅', 'ONLINE', NOW()),
 ('道路摄像头 K1', 'CAM-ROAD-001', '192.168.1.111', 'rtsp://192.168.1.111:554/stream', '主干道十字路口', 'ONLINE', NOW()),
 ('围墙摄像头 L1', 'CAM-WALL-001', '192.168.1.112', 'rtsp://192.168.1.112:554/stream', '西侧围墙', 'ONLINE', NOW());
+
+-- Insert demo alarm rules
+INSERT INTO vbc_alarm_rule (rule_name, rule_type, threshold_value, enabled, alarm_level) VALUES
+('全局人数超限', 'PEOPLE_EXCEED', 10, 1, 'WARNING'),
+('校门区域入侵', 'ZONE_INTRUSION', 1, 1, 'CRITICAL'),
+('操场人群聚集', 'CROWD_GATHERING', 5, 1, 'WARNING');
