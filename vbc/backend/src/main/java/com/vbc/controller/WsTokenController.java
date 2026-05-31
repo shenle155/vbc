@@ -20,7 +20,7 @@ public class WsTokenController {
     @GetMapping("/token")
     public Map<String, Object> getToken() {
         String token = sessionManager.generateToken();
-        sessionManager.registerToken(token, null);
+        sessionManager.registerToken(token, "");
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);

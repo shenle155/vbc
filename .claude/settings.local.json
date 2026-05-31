@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote *)",
+      "Skill(vision-multimodal)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(java --version)",
+      "Bash(mvn --version)",
+      "Bash(mysql --version)",
+      "Bash(mysqladmin ping *)",
+      "Bash(mysql *)",
+      "Bash(mvn spring-boot:run -q)",
+      "Bash(tail -20 C:\\\\\\\\Users\\\\\\\\shenle\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\E--vbc\\\\\\\\53b043f8-1993-46ff-bd9f-82674a07af7c\\\\\\\\tasks\\\\\\\\bmftyhe0m.output)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(curl -s http://localhost:8080/api/v1/devices?page=1\\\\&pageSize=3)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill *)",
+      "Bash(powershell *)",
+      "Bash(curl -s http://localhost:8080/api/v1/devices/1)",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/devices -H \"Content-Type: application/json\" -d '{\"deviceName\":\"测试摄像头\",\"deviceCode\":\"TEST-001\",\"ipAddress\":\"10.0.0.1\",\"location\":\"测试位置\"}')",
+      "Bash(curl -s http://localhost:8080/api/v1/alarms/rules)",
+      "Bash(curl -s http://localhost:8080/api/v1/dashboard/overview)",
+      "Bash(curl *)",
+      "Bash(powershell.exe *)",
+      "Bash(mvn test *)",
+      "Bash(jps)",
+      "Bash(git -C \"E:/vbc\" add .)",
+      "Bash(git -C E:/vbc commit -m ' *)",
+      "Bash(git -C \"E:/vbc\" push)"
+    ]
+  }
+}

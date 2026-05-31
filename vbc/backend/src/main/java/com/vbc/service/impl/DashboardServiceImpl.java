@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,20 +25,20 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardOverviewVO getOverview() {
         DashboardOverviewVO vo = new DashboardOverviewVO();
-        vo.setTotalDevices((int) deviceMapper.selectCount(null));
-        vo.setOnlineDevices((int) deviceMapper.selectCount(
-                new LambdaQueryWrapper<Device>().eq(Device::getStatus, "ONLINE")));
-        vo.setActiveVideos((int) videoMapper.selectCount(
-                new LambdaQueryWrapper<Video>().eq(Video::getStatus, "READY")));
+        vo.setTotalDevices(deviceMapper.selectCount(null).intValue());
+        vo.setOnlineDevices(deviceMapper.selectCount(
+                new LambdaQueryWrapper<Device>().eq(Device::getStatus, "ONLINE")).intValue());
+        vo.setActiveVideos(videoMapper.selectCount(
+                new LambdaQueryWrapper<Video>().eq(Video::getStatus, "READY")).intValue());
 
         LocalDate today = LocalDate.now();
-        vo.setTodayAlarms((int) alarmRecordMapper.selectCount(
+        vo.setTodayAlarms(alarmRecordMapper.selectCount(
                 new LambdaQueryWrapper<AlarmRecord>()
-                        .ge(AlarmRecord::getCreatedAt, today.atStartOfDay())));
-        vo.setUnhandledAlarms((int) alarmRecordMapper.selectCount(
+                        .ge(AlarmRecord::getCreatedAt, today.atStartOfDay())).intValue());
+        vo.setUnhandledAlarms(alarmRecordMapper.selectCount(
                 new LambdaQueryWrapper<AlarmRecord>()
                         .eq(AlarmRecord::getHandled, false)
-                        .ge(AlarmRecord::getCreatedAt, today.atStartOfDay())));
+                        .ge(AlarmRecord::getCreatedAt, today.atStartOfDay())).intValue());
 
         // Sum counts from today's detections
         var detWrapper = new LambdaQueryWrapper<DetectionRecord>()
@@ -80,7 +81,7 @@ public class DashboardServiceImpl implements DashboardService {
             AlarmStatsVO.TypeCount tc = new AlarmStatsVO.TypeCount();
             tc.setType(type);
             tc.setCount(alarmRecordMapper.selectCount(
-                    new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmType, type)));
+                    new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmType, type)).intValue());
             byType.add(tc);
         }
         vo.setByType(byType);
@@ -91,7 +92,7 @@ public class DashboardServiceImpl implements DashboardService {
             AlarmStatsVO.LevelCount lc = new AlarmStatsVO.LevelCount();
             lc.setLevel(level);
             lc.setCount(alarmRecordMapper.selectCount(
-                    new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmLevel, level)));
+                    new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmLevel, level)).intValue());
             byLevel.add(lc);
         }
         vo.setByLevel(byLevel);
@@ -105,7 +106,7 @@ public class DashboardServiceImpl implements DashboardService {
             ti.setCount(alarmRecordMapper.selectCount(
                     new LambdaQueryWrapper<AlarmRecord>()
                             .ge(AlarmRecord::getCreatedAt, day.atStartOfDay())
-                            .lt(AlarmRecord::getCreatedAt, day.plusDays(1).atStartOfDay())));
+                            .lt(AlarmRecord::getCreatedAt, day.plusDays(1).atStartOfDay())).intValue());
             trend.add(ti);
         }
         vo.setTrend(trend);

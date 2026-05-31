@@ -115,6 +115,7 @@ public class DetectionServiceImpl implements DetectionService {
                 heatmapDataMapper.insert(hd);
             }
         }
+    }
 
     @Override
     public PageResult<DetectionVO> listDetections(Long videoId, Integer page, Integer pageSize,
