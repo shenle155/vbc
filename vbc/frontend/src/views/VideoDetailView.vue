@@ -50,11 +50,13 @@
             >
               {{ extracting ? '提取中...' : '提取帧' }}
             </el-button>
-            <el-button size="small" :disabled="!detection.modelReady.value" @click="detection.initModel()" v-if="!detection.modelReady.value">
+            <el-button size="small" :loading="detection.modelLoading.value" @click="detection.initModel()" v-if="!detection.modelReady.value">
               加载检测模型
             </el-button>
-            <span v-if="extractStatusMsg" class="status-msg">{{ extractStatusMsg }}</span>
             <span v-if="detection.modelLoading.value" class="status-msg">模型加载中...</span>
+            <span v-if="detection.modelReady.value" style="color:#67c23a;font-size:13px">模型就绪</span>
+            <span v-if="detection.loadError.value" style="color:#f56c6c;font-size:13px">错误: {{ detection.loadError.value }}</span>
+            <span v-if="extractStatusMsg" class="status-msg">{{ extractStatusMsg }}</span>
           </div>
         </el-card>
 
@@ -110,10 +112,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { ArrowLeft, VideoCamera, VideoPlay, Operation } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getVideo } from '@/api/video'
 import { useDetection } from '@/composables/useDetection'
-import { useWebSocket } from '@/composables/useWebSocket'
 import type { Video } from '@/types/video'
 import type { Result } from '@/types/common'
 import DetectionCanvas from '@/components/video/DetectionCanvas.vue'
@@ -143,7 +145,6 @@ const videoId = computed(() => Number(route.params.id))
 const videoUrl = computed(() => video.value ? `/api/v1/files/videos/${getFileName(video.value.filePath)}` : '')
 
 const detection = useDetection()
-const { connected, connect, subscribe, disconnect } = useWebSocket()
 
 const statusTagType = computed(() => {
   const m: Record<string, string> = { UPLOADING: 'info', PROCESSING: 'warning', READY: 'success', ERROR: 'danger' }
@@ -154,30 +155,16 @@ const statusText = computed(() => {
   return m[video.value?.status || ''] || video.value?.status || ''
 })
 
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(async () => {
   await loadVideo()
-  await connect()
-  if (connected.value) {
-    subscribe(`/topic/video/${videoId.value}/status`, (msg: any) => {
-      if (msg.type === 'STATUS_CHANGE') {
-        extractStatusMsg.value = msg.message
-        if (msg.status === 'READY') {
-          extracting.value = false
-          loadVideo()
-        } else if (msg.status === 'ERROR') {
-          extracting.value = false
-          ElMessage.error('帧提取失败')
-        }
-      }
-    })
-  }
-  // Preload model in background
   detection.initModel()
 })
 
 onUnmounted(() => {
   detection.dispose()
-  disconnect()
+  if (pollTimer) clearInterval(pollTimer)
 })
 
 async function loadVideo() {
@@ -204,7 +191,24 @@ async function triggerExtract() {
   extractStatusMsg.value = '正在提取帧...'
   try {
     await request.post(`/videos/${videoId.value}/extract`, { intervalSeconds: 1.0, maxFrames: 300 })
-    ElMessage.success('开始提取帧，请稍候...')
+    // Poll until complete
+    pollTimer = setInterval(async () => {
+      try {
+        const res = await getVideo(videoId.value)
+        const v = res.data.data
+        if (v.status === 'READY') {
+          extracting.value = false
+          extractStatusMsg.value = '帧提取完成'
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+          video.value = v
+          loadFrames()
+        } else if (v.status === 'ERROR') {
+          extracting.value = false
+          extractStatusMsg.value = '帧提取失败'
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+        }
+      } catch { /* ignore */ }
+    }, 2000)
   } catch {
     extracting.value = false
   }

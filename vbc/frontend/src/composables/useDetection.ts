@@ -11,10 +11,10 @@ interface FrameItem {
 }
 
 export function useDetection() {
-  const { modelReady, initModel, detect, dispose } = useTensorFlow()
+  const { modelReady, modelLoading, loadError, initModel, detect, dispose } = useTensorFlow()
 
   const running = ref(false)
-  const confidenceThreshold = ref(0.5)
+  const confidenceThreshold = ref(0.1)
   const currentDetections = ref<DetectionBox[]>([])
   const fps = ref(0)
   const frameCount = ref(0)
@@ -77,15 +77,17 @@ export function useDetection() {
 
       const frame = frames[index]
       const img = new Image()
-      img.crossOrigin = 'anonymous'
       img.src = frame.fileUrl
 
-      await new Promise<void>((resolve) => {
-        img.onload = () => resolve()
-        img.onerror = () => resolve()
-      })
-
+      await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve() })
       if (!running.value) return
+
+      // Convert to canvas to avoid any CORS/tag issues
+      const cv = document.createElement('canvas')
+      cv.width = img.naturalWidth
+      cv.height = img.naturalHeight
+      cv.getContext('2d')!.drawImage(img, 0, 0)
+      img.remove()
 
       // Match canvas size to video display size
       const videoRect = video.getBoundingClientRect()
@@ -94,7 +96,7 @@ export function useDetection() {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       try {
-        const detections = await detect(img)
+        const detections = await detect(cv)
         const filtered = filterByConfidence(detections, confidenceThreshold.value)
         currentDetections.value = filtered
 
@@ -102,7 +104,7 @@ export function useDetection() {
         for (const d of filtered) {
           const color = d.class === 'person' ? '#00ff00' : '#0088ff'
           const [x, y, w, h] = scaleBboxToCanvas(
-            d.bbox, img.naturalWidth, img.naturalHeight, canvas.width, canvas.height
+            d.bbox, cv.width, cv.height, canvas.width, canvas.height
           )
           ctx.strokeStyle = color
           ctx.lineWidth = 2
@@ -142,10 +144,10 @@ export function useDetection() {
         // Skip frame on error
       }
 
-      img.remove()
+      cv.remove()
 
       if (running.value) {
-        animationId = requestAnimationFrame(() => processFrame(index + 1))
+        animationId = window.setTimeout(() => processFrame(index + 1), 500)
       }
     }
 
@@ -160,6 +162,8 @@ export function useDetection() {
     fps,
     frameCount,
     modelReady,
+    modelLoading,
+    loadError,
     initModel,
     start,
     stop,

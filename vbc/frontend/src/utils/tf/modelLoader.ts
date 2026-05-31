@@ -1,3 +1,5 @@
+import '@tensorflow/tfjs-backend-webgl'
+import '@tensorflow/tfjs-backend-cpu'
 import * as cocoSsd from '@tensorflow-models/coco-ssd'
 import type { ObjectDetection } from '@tensorflow-models/coco-ssd'
 
@@ -17,14 +19,22 @@ export async function loadModel(): Promise<ObjectDetection> {
   }
   loading = true
   try {
-    model = await cocoSsd.load({ base: 'lite_mobilenet_v2' })
-    // Warm up with a dummy tensor to initialize WebGL
+    console.log('[TF] Loading COCO-SSD from local...')
+    model = await cocoSsd.load({
+      base: 'mobilenet_v1' as any,
+      modelUrl: '/models/coco-ssd/model.json',
+    })
+    console.log('[TF] Model loaded, warming up...')
     const dummy = document.createElement('canvas')
     dummy.width = 1
     dummy.height = 1
     await model.detect(dummy)
     dummy.remove()
+    console.log('[TF] Model ready')
     return model
+  } catch (e) {
+    console.error('[TF] Model load failed:', e)
+    throw e
   } finally {
     loading = false
   }

@@ -50,13 +50,12 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!-- Video Processing (disabled for API testing)
+        <!-- Video Processing -->
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv-platform</artifactId>
             <version>${javacv.version}</version>
         </dependency>
-        -->
 
         <!-- Test -->
         <dependency>

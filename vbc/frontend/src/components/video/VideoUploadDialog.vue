@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
+import { UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance, type UploadInstance } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { uploadVideo } from '@/api/video'

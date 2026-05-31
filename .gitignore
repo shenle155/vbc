@@ -37,6 +37,14 @@ vbc/backend/uploads/snapshots/*
 # Claude
 .claude/
 
+# ML model weights (large binary files)
+vbc/frontend/public/models/coco-ssd/group1-shard*
+
+# Test files
+vbc/backend/test_video.mp4
+vbc/frontend/test_video.mp4
+vbc/test.mp4
+
 # Package files
 package-lock.json
 yarn.lock

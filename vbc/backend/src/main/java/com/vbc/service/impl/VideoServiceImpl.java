@@ -9,6 +9,7 @@ import com.vbc.repository.FrameMapper;
 import com.vbc.repository.VideoMapper;
 import com.vbc.service.VideoService;
 import com.vbc.util.FileUtil;
+import com.vbc.util.VideoConverter;
 import com.vbc.vo.FrameVO;
 import com.vbc.vo.PageResult;
 import com.vbc.vo.VideoVO;
@@ -40,6 +41,14 @@ public class VideoServiceImpl implements VideoService {
 
     @Value("${vbc.upload.video-path}")
     private String videoUploadPath;
+
+    private Path getUploadDir() {
+        Path path = Paths.get(videoUploadPath);
+        if (!path.isAbsolute()) {
+            path = Paths.get(System.getProperty("user.dir")).resolve(videoUploadPath);
+        }
+        return path.toAbsolutePath().normalize();
+    }
 
     @Override
     public PageResult<VideoVO> listVideos(Integer page, Integer pageSize, String keyword, String status, Long deviceId) {
@@ -96,17 +105,30 @@ public class VideoServiceImpl implements VideoService {
         String storedFilename = UUID.randomUUID().toString() + extension;
 
         try {
-            Path uploadDir = Paths.get(videoUploadPath);
+            Path uploadDir = getUploadDir();
             Files.createDirectories(uploadDir);
             Path targetPath = uploadDir.resolve(storedFilename);
             file.transferTo(targetPath.toFile());
+            log.info("Video saved to: {}", targetPath);
+
+            // Auto-convert to H.264 for browser compatibility
+            try {
+                String convertedFilename = storedFilename.replace(extension, "_h264" + extension);
+                Path convertedPath = uploadDir.resolve(convertedFilename);
+                VideoConverter.convertToH264(targetPath.toString(), convertedPath.toString());
+                targetPath = convertedPath;
+                storedFilename = convertedFilename;
+                log.info("Video converted to H.264: {}", targetPath);
+            } catch (Exception e) {
+                log.warn("H.264 conversion failed, keeping original: {}", e.getMessage());
+            }
 
             Video video = new Video();
-            video.setTitle(dto.getTitle());
-            video.setFileName(originalFilename);
-            video.setFilePath(targetPath.toString());
+            video.setTitle(dto.getTitle() != null ? dto.getTitle() : "Untitled");
+            video.setFileName(originalFilename != null ? originalFilename : "unknown.mp4");
+            video.setFilePath(targetPath.toString().replace("\\", "/"));
             video.setFileSize(file.getSize());
-            video.setStatus("UPLOADING");
+            video.setStatus("READY");
             video.setDeviceId(dto.getDeviceId());
             videoMapper.insert(video);
 
@@ -114,7 +136,8 @@ public class VideoServiceImpl implements VideoService {
             BeanUtils.copyProperties(video, vo);
             return vo;
         } catch (IOException e) {
-            throw new RuntimeException("视频文件保存失败", e);
+            log.error("Failed to save video file", e);
+            throw new RuntimeException("视频文件保存失败: " + e.getMessage(), e);
         }
     }
 

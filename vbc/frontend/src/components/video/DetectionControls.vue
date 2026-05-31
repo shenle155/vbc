@@ -3,7 +3,7 @@
     <el-button
       :type="running ? 'danger' : 'success'"
       size="small"
-      @click="$emit(running ? 'stop' : 'start')"
+      @click="toggle"
       :disabled="!canStart"
     >
       {{ running ? '停止检测' : '开始检测' }}
@@ -11,7 +11,7 @@
     <span class="threshold-label">置信度: {{ confidence }}</span>
     <el-slider
       v-model="confidence"
-      :min="0.3"
+      :min="0.1"
       :max="0.9"
       :step="0.05"
       style="width: 120px"
@@ -32,13 +32,17 @@ const props = defineProps<{
   canStart: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   start: []
   stop: []
   'update:threshold': [value: number]
 }>()
 
-const confidence = ref(0.5)
+const confidence = ref(0.3)
+
+function toggle() {
+  emit(props.running ? 'stop' : 'start')
+}
 </script>
 
 <style scoped>

@@ -1,6 +1,5 @@
 import { ref, onUnmounted } from 'vue'
 import { Client } from '@stomp/stompjs'
-import SockJS from 'sockjs-client'
 import { getWsToken } from '@/api/websocket'
 import { useWebSocketStore } from '@/store/websocket'
 
@@ -17,13 +16,13 @@ export function useWebSocket() {
   async function connect() {
     try {
       const res = await getWsToken()
-      const { token, brokerUrl } = res.data.data
+      const { token } = res.data.data
 
       const wsStore = useWebSocketStore()
       wsStore.setToken(token)
 
       const stompClient = new Client({
-        webSocketFactory: () => new SockJS(brokerUrl),
+        brokerURL: 'ws://localhost:8080/ws',
         connectHeaders: { token },
         heartbeatIncoming: 10000,
         heartbeatOutgoing: 10000,
@@ -32,16 +31,13 @@ export function useWebSocket() {
           connected.value = true
           reconnectAttempts.value = 0
           wsStore.setConnected(true)
-          // Re-subscribe to all previously active topics
           handlers.forEach((_, topic) => {
             stompClient.subscribe(topic, (message) => {
               try {
                 const body = JSON.parse(message.body)
                 const subHandlers = handlers.get(topic)
-                if (subHandlers) {
-                  subHandlers.forEach((h) => h(body))
-                }
-              } catch { /* ignore parse errors */ }
+                if (subHandlers) subHandlers.forEach((h) => h(body))
+              } catch { /* ignore */ }
             })
           })
         },
@@ -65,15 +61,9 @@ export function useWebSocket() {
 
   function scheduleReconnect() {
     if (reconnectTimer) return
-    const delay = Math.min(
-      Math.pow(2, reconnectAttempts.value) * 1000,
-      maxReconnectDelay
-    )
+    const delay = Math.min(Math.pow(2, reconnectAttempts.value) * 1000, maxReconnectDelay)
     reconnectAttempts.value++
-    reconnectTimer = setTimeout(() => {
-      reconnectTimer = null
-      connect()
-    }, delay)
+    reconnectTimer = setTimeout(() => { reconnectTimer = null; connect() }, delay)
   }
 
   function subscribe(topic: string, handler: MessageHandler) {
@@ -82,8 +72,6 @@ export function useWebSocket() {
       useWebSocketStore().addSubscription(topic)
     }
     handlers.get(topic)!.add(handler)
-
-    // Subscribe on an active connection
     if (client.value?.connected) {
       client.value.subscribe(topic, (message) => {
         try {
@@ -111,18 +99,13 @@ export function useWebSocket() {
   }
 
   function disconnect() {
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer)
-      reconnectTimer = null
-    }
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null }
     client.value?.deactivate()
     handlers.clear()
     useWebSocketStore().clearSubscriptions()
   }
 
-  onUnmounted(() => {
-    disconnect()
-  })
+  onUnmounted(() => disconnect())
 
   return { connected, connect, disconnect, subscribe, unsubscribe, send }
 }

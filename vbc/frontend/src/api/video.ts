@@ -1,28 +1,22 @@
-import request from './request'
+import axios from 'axios'
 import type { Result, PageResult } from '@/types/common'
 import type { Video } from '@/types/video'
 
-export function getVideoList(params: {
-  page?: number
-  pageSize?: number
-  keyword?: string
-  status?: string
-  deviceId?: number
-}) {
-  return request.get<Result<PageResult<Video>>>('/videos', { params })
+const api = axios.create({ baseURL: '/api/v1', timeout: 30000 })
+const uploadApi = axios.create({ baseURL: 'http://localhost:8080/api/v1', timeout: 300000 })
+
+export function getVideoList(params: Record<string, any>) {
+  return api.get<Result<PageResult<Video>>>('/videos', { params })
 }
 
 export function getVideo(id: number) {
-  return request.get<Result<Video>>(`/videos/${id}`)
+  return api.get<Result<Video>>(`/videos/${id}`)
 }
 
 export function uploadVideo(formData: FormData) {
-  return request.post<Result<Video>>('/videos/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120000,
-  })
+  return uploadApi.post<Result<Video>>('/videos/upload', formData)
 }
 
 export function deleteVideo(id: number) {
-  return request.delete<Result<null>>(`/videos/${id}`)
+  return api.delete<Result<null>>(`/videos/${id}`)
 }

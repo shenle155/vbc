@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { VideoCamera, DataAnalysis, Bell, List, Setting, Monitor, Grid } from '@element-plus/icons-vue'
 import { useAppStore } from '@/store/app'
 
 const route = useRoute()

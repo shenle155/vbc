@@ -14,7 +14,7 @@ function getCanvas(): HTMLCanvasElement | null {
 defineExpose({ getCanvas })
 </script>
 
-<style scoped>
+<style>
 .detection-canvas {
   position: absolute;
   top: 0;
@@ -22,5 +22,6 @@ defineExpose({ getCanvas })
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 10;
 }
 </style>

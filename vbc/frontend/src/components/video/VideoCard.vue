@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { VideoCamera, VideoPlay } from '@element-plus/icons-vue'
 import type { Video } from '@/types/video'
 
 const props = defineProps<{ video: Video }>()

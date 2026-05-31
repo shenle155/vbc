@@ -49,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { Upload } from '@element-plus/icons-vue'
 import { getVideoList } from '@/api/video'
 import type { Video } from '@/types/video'
 import VideoCard from '@/components/video/VideoCard.vue'
